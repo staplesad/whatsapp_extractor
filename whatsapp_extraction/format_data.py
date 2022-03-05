@@ -18,8 +18,9 @@ class DataLoader:
         self.tag_re = re.compile("(@\d+)")
         self.cfg = util.Config(config_loc)
         self.senders = self.cfg.senders
-        self.remove_media = self.cfg.remove_media or True
-        self.remove_tags = self.cfg.remove_tags or True
+        self.replace_tags = self.cfg.replace_tags
+        self.remove_media = self.cfg.remove_media if self.cfg.remove_media else True
+        self.remove_tags = self.cfg.remove_tags if self.cfg.remove_media else True
 
     def load_line(self, line: str) -> Tuple[str, Optional[str], Optional[str], bool]:
         header_match = self.header_re.match(line)
@@ -65,6 +66,21 @@ class DataLoader:
             msg = msg.replace(tag, "[@TAG]")
         return msg
 
+    def replace_tag(self, msg: str) -> str:
+        tag_matches = self.tag_re.findall(msg)
+        for tag in tag_matches:
+            tag_num = tag[1:]
+            if tag_num in self.replace_tags:
+                msg = msg.replace(tag_num, self.replace_tags[tag_num])
+            else:
+                msg = msg.replace(tag, "[@TAG]")
+        return msg
+
+    def replace_senders(self, sender: str) -> str:
+        if sender in self.senders:
+            return self.senders[sender]
+        return sender
+
     def clean_df(self, df: pd.DataFrame) -> pd.DataFrame:
         df['messages'] = df['messages'].str.strip()
         if self.remove_media:
@@ -72,6 +88,10 @@ class DataLoader:
             df = df.drop(idx, axis=0)
         if self.remove_tags:
             df['messages'] = df['messages'].apply(self.remove_tag)
+        elif self.replace_tags:
+            df['messages'] = df['messages'].apply(self.replace_tag)
+        if self.senders:
+            df['senders'] = df['senders'].apply(self.replace_senders)
         # df['messages'] = df['messages'].apply(self.clean_text)
         return df
 
