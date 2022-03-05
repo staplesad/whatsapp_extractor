@@ -11,9 +11,10 @@ from . import util
 
 class DataLoader:
     def __init__(self, config_loc=None):
-        self.header_re = re.compile(
-                "\d{2}\/\d{2}\/\d{4}, \d{2}\:\d{2} - ([\w|\(|\)]+(?: \w+)?):")
-        self.ts_re = re.compile("\d{2}\/\d{2}\/\d{4}, \d{2}\:\d{2} -")
+        ts_str = "\d{2}\/\d{2}\/\d{4}, \d{2}\:\d{2}"
+        sender_str = "([\w\(\)\+-\.]+(?:\s[\w\(\)-\.]+){,3}?)"
+        self.header_re = re.compile(f"{ts_str} - {sender_str}:")
+        self.ts_re = re.compile(f"{ts_str} -")
         self.cfg = util.Config(config_loc)
         self.senders = self.cfg.senders
         self.remove_media = self.cfg.remove_media or True
@@ -75,6 +76,3 @@ class DataLoader:
         del output_dict['from_sender']
         output_dict['timestamp'] = self.get_datetime(output_dict['headers'])
         return pd.DataFrame(output_dict)
-
-    def id_messy_message(self, dataframe: pd.DataFrame) -> pd.DataFrame:
-        pass

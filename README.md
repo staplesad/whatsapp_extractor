@@ -3,7 +3,8 @@
 - messages where a sender is None correspond to notifications (such as Group created by __ or __ has changed their phone number).
 
 ## Assumptions about contact names
-- They only contain Unicode word characters and characters ( and ). If a contact's name contains anything else it won't be parsed correctly
+- They only contain Unicode word characters and characters (, ) and +. If a contact's name contains anything else it won't be parsed correctly
+- It assumes that names do not contain more than 3 spaces.
 - If you want to specify a mapping from e.g. phone numbers or nicknames to other names that can be defined in an optional config file.
 
 ## Config flags
