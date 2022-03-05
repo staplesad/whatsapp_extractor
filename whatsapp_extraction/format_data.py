@@ -1,7 +1,7 @@
 import re
 import datetime as dt
 from collections import defaultdict
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Dict
 
 import numpy as np
 import pandas as pd
@@ -15,6 +15,7 @@ class DataLoader:
         sender_str = "([\w\(\)\+-\.]+(?:\s[\w\(\)-\.]+){,3}?)"
         self.header_re = re.compile(f"{ts_str} - {sender_str}:")
         self.ts_re = re.compile(f"{ts_str} -")
+        self.tag_re = re.compile("(@\d+)")
         self.cfg = util.Config(config_loc)
         self.senders = self.cfg.senders
         self.remove_media = self.cfg.remove_media or True
@@ -41,7 +42,7 @@ class DataLoader:
     @staticmethod
     def merge_broken_messages(messages: List[str],
                               senders: List[Optional[str]],
-                              from_senders: List[bool]) -> Tuple[List[str], List[Optional[str]]]:
+                              from_senders: List[bool]) -> Tuple[List[str], List[int]]:
         merged_messages: List[str] = []
         indexes: List[int] = []
         for i, (message, sender, from_sender) in enumerate(
@@ -58,8 +59,24 @@ class DataLoader:
         datetime_format = "%d/%m/%Y, %H:%M -"
         return [dt.datetime.strptime(d, datetime_format) for d in datestrings]
 
+    def remove_tag(self, msg: str) -> str:
+        tag_matches = self.tag_re.findall(msg)
+        for tag in tag_matches:
+            msg = msg.replace(tag, "[@TAG]")
+        return msg
+
+    def clean_df(self, df: pd.DataFrame) -> pd.DataFrame:
+        df['messages'] = df['messages'].str.strip()
+        if self.remove_media:
+            idx = df[df['messages']=="<Media omitted>"].index
+            df = df.drop(idx, axis=0)
+        if self.remove_tags:
+            df['messages'] = df['messages'].apply(self.remove_tag)
+        # df['messages'] = df['messages'].apply(self.clean_text)
+        return df
+
     def load_file(self, filename: str) -> pd.DataFrame:
-        output_dict = defaultdict(list)
+        output_dict: Dict = defaultdict(list)
         with open(filename) as fp:
             for line in fp:
                 m, h, s, from_s = self.load_line(line)
@@ -75,4 +92,6 @@ class DataLoader:
         output_dict['headers'] = np.array(output_dict['headers'])[idx]
         del output_dict['from_sender']
         output_dict['timestamp'] = self.get_datetime(output_dict['headers'])
-        return pd.DataFrame(output_dict)
+        df = pd.DataFrame(output_dict)
+        df = self.clean_df(df)
+        return df
