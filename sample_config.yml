@@ -1,0 +1,6 @@
+remove_media: True
+remove_tags: False
+replace_tags:
+  849348394: "A Name"
+senders:
+  Nickname: "Full Name"
