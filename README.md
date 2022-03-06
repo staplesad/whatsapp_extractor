@@ -8,5 +8,5 @@
 - If you want to specify a mapping from e.g. phone numbers or nicknames to other names that can be defined in an optional config file.
 
 ## Config flags
-- If the messages are exported without media any media sent shows up as "<Media Omitted>". These messages are removed if the `remove_media` flag is True. (default is True)
+- If the messages are exported without media any media sent shows up as "\<Media Omitted\>". These messages are removed if the `remove_media` flag is True. (default is True)
 - If a message contains an @tagging of a contact this is shown in text as their phone number. These tags are removed if the `remove_tags` flag is True. (default is True)
